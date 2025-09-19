@@ -16,7 +16,12 @@ class ImportMarketDataJob < ApplicationJob
     opts = opts.symbolize_keys
     mode = opts.fetch(:mode, :full)
     clear_cache = opts.fetch(:clear_cache, false)
+    start_date = opts[:start_date].present? ? Date.parse(opts[:start_date]) : nil
 
-    MarketDataImporter.new(mode: mode, clear_cache: clear_cache).import_all
+    MarketDataImporter.new(
+      mode: mode, 
+      clear_cache: clear_cache,
+      custom_start_date: start_date
+    ).import_all
   end
 end

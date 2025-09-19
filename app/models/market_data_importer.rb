@@ -5,9 +5,10 @@ class MarketDataImporter
 
   InvalidModeError = Class.new(StandardError)
 
-  def initialize(mode: :full, clear_cache: false)
+  def initialize(mode: :full, clear_cache: false, custom_start_date: nil)
     @mode = set_mode!(mode)
     @clear_cache = clear_cache
+    @custom_start_date = custom_start_date
   end
 
   def import_all
@@ -42,7 +43,14 @@ class MarketDataImporter
 
     required_exchange_rate_pairs.each do |pair|
       # pair is a Hash with keys :source, :target, and :start_date
-      start_date = snapshot? ? default_start_date : pair[:start_date]
+      # If we have a custom start date, use that instead of the default or pair-specific start date
+      start_date = if @custom_start_date
+                    @custom_start_date
+                  elsif snapshot?
+                    default_start_date
+                  else
+                    pair[:start_date]
+                  end
 
       ExchangeRate.import_provider_rates(
         from: pair[:source],
@@ -100,6 +108,8 @@ class MarketDataImporter
     end
 
     def get_first_required_price_date(security)
+      # If we have a custom start date, use that instead of the computed one
+      return @custom_start_date if @custom_start_date
       return default_start_date if snapshot?
 
       Trade.with_entry.where(security: security).minimum(:date) || default_start_date
@@ -107,6 +117,8 @@ class MarketDataImporter
 
     # An approximation that grabs more than we likely need, but simplifies the logic
     def get_first_required_exchange_rate_date(from_currency:)
+      # If we have a custom start date, use that instead of the computed one
+      return @custom_start_date if @custom_start_date
       return default_start_date if snapshot?
 
       Entry.where(currency: from_currency).minimum(:date) || default_start_date
