@@ -5,7 +5,7 @@ export default class extends Controller {
     "endpoint",
     "modelSelect",
     "modelContainer",
-    "blacklistContainer",
+    "blacklist",
     "refreshButton",
     "providerInfo",
   ];
@@ -105,34 +105,7 @@ export default class extends Controller {
     this.providerInfoTarget.textContent = `Provider: ${providerType} - ${providerInfo}`;
   }
 
-  addBlacklistItem() {
-    const container = this.blacklistContainerTarget;
-    const newItem = document.createElement("div");
-    newItem.className = "flex items-center gap-2";
-    newItem.innerHTML = `
-      <input type="text" 
-             name="setting[openai_model_blacklist][]" 
-             class="flex-1 rounded-md border-secondary shadow-sm focus:border-accent focus:ring-accent sm:text-sm"
-             placeholder="e.g., text-embedding, whisper, dall-e">
-      <button type="button" 
-              class="rounded-md border border-destructive bg-destructive-surface px-3 py-2 text-sm text-destructive hover:bg-destructive-surface-hover"
-              data-action="click->openai-settings#removeBlacklistItem">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-        </svg>
-      </button>
-    `;
-
-    // Insert before the "Add" button
-    const addButton = container.querySelector(
-      'button[data-action="click->openai-settings#addBlacklistItem"]'
-    );
-    container.insertBefore(newItem, addButton);
-  }
-
-  removeBlacklistItem(event) {
-    event.target.closest(".flex").remove();
-
+  blacklistChanged() {
     // Trigger form submission to save changes
     const form = this.element.closest("form");
     if (form) {

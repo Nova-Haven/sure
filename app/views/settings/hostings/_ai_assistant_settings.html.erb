@@ -1,0 +1,27 @@
+<div class="space-y-4">
+  <div>
+    <h2 class="font-medium mb-1"><%= t(".title", default: "AI Assistant Settings") %></h2>
+    <p class="text-secondary text-sm mb-4"><%= t(".description", default: "Customize the AI assistant name and appearance.") %></p>
+  </div>
+
+  <%= styled_form_with model: Setting.new,
+                       url: settings_hosting_path,
+                       method: :patch,
+                       data: {
+                         controller: "auto-submit-form",
+                         "auto-submit-form-trigger-event-value": "blur"
+                       } do |form| %>
+  
+  <!-- AI Assistant Name -->
+  <%= form.text_field :ai_assistant_name,
+                      label: t(".assistant_name_label", default: "AI Assistant Name"),
+                      placeholder: t(".assistant_name_placeholder", default: "Enter assistant name"),
+                      value: Setting.ai_assistant_name,
+                      autocomplete: "off",
+                      spellcheck: "false",
+                      disabled: ENV["AI_ASSISTANT_NAME"].present?,
+                      help_text: t(".assistant_name_help", default: "The name that will be displayed for the AI assistant throughout the application."),
+                      data: { "auto-submit-form-target": "auto" } %>
+
+  <% end %>
+</div>

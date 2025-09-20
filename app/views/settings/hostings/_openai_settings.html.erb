@@ -64,33 +64,18 @@
   </div>
 
   <!-- Model Blacklist -->
-  <div class="space-y-2">
-    <%= form.label :openai_model_blacklist, t(".blacklist_label"), class: "block text-sm font-medium text-primary" %>
-    <p class="text-sm text-secondary"><%= t(".blacklist_help") %></p>
-    
-    <% blacklist = Setting.openai_model_blacklist || [] %>
-    <div data-openai-settings-target="blacklistContainer" class="space-y-2">
-      <% blacklist.each_with_index do |pattern, index| %>
-        <div class="flex items-center gap-2">
-          <%= text_field_tag "setting[openai_model_blacklist][]", 
-                             pattern, 
-                             class: "form-input flex-1",
-                             placeholder: t(".blacklist_pattern_placeholder") %>
-          <%= button_tag type: "button", 
-                         class: "rounded-md border border-destructive bg-destructive-surface px-3 py-2 text-sm text-destructive hover:bg-destructive-surface-hover",
-                         data: { action: "click->openai-settings#removeBlacklistItem" } do %>
-            <%= icon "x" %>
-          <% end %>
-        </div>
-      <% end %>
-      
-      <!-- Add new pattern button -->
-      <%= button_tag t(".add_blacklist_pattern"), 
-                     type: "button",
-                     class: "rounded-md border border-primary bg-container px-3 py-2 text-sm text-primary hover:bg-surface-default",
-                     data: { action: "click->openai-settings#addBlacklistItem" } %>
-    </div>
-  </div>
+  <%= form.text_field :openai_model_blacklist,
+                      label: t(".blacklist_label"),
+                      placeholder: t(".blacklist_pattern_placeholder"),
+                      value: Setting.openai_model_blacklist.join(", "),
+                      autocomplete: "off",
+                      spellcheck: "false",
+                      help_text: t(".blacklist_help"),
+                      data: { 
+                        "auto-submit-form-target": "auto",
+                        "openai-settings-target": "blacklist",
+                        action: "change->openai-settings#blacklistChanged"
+                      } %>
 
   <!-- Refresh Models Button -->
   <div class="flex items-center gap-2">

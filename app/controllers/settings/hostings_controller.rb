@@ -52,8 +52,14 @@ class Settings::HostingsController < ApplicationController
     end
 
     if hosting_params.key?(:openai_model_blacklist)
-      blacklist = hosting_params[:openai_model_blacklist]&.reject(&:blank?) || []
+      blacklist_param = hosting_params[:openai_model_blacklist].to_s.strip
+      blacklist = blacklist_param.split(',').map(&:strip).reject(&:blank?)
       Setting.openai_model_blacklist = blacklist
+    end
+
+    if hosting_params.key?(:ai_assistant_name)
+      assistant_name = hosting_params[:ai_assistant_name].to_s.strip
+      Setting.ai_assistant_name = assistant_name if assistant_name.present?
     end
 
     redirect_to settings_hosting_path, notice: t(".success")
@@ -96,7 +102,8 @@ class Settings::HostingsController < ApplicationController
         :openai_access_token,
         :openai_endpoint,
         :openai_model,
-        openai_model_blacklist: []
+        :openai_model_blacklist,
+        :ai_assistant_name
       )
     end
 

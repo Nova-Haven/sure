@@ -28,26 +28,71 @@ class Assistant::Function::GetIncomeStatement < Assistant::Function
   end
 
   def call(params = {})
-    period = Period.custom(start_date: Date.parse(params["start_date"]), end_date: Date.parse(params["end_date"]))
-    income_data = family.income_statement.income_totals(period: period)
-    expense_data = family.income_statement.expense_totals(period: period)
+    begin
+      Rails.logger.debug "[GetIncomeStatement] Starting with params: #{params.inspect}"
+      
+      # Check if there are any accounts first
+      if family.accounts.visible.empty?
+        return {
+          currency: family.currency,
+          period: {
+            start_date: Date.parse(params["start_date"]),
+            end_date: Date.parse(params["end_date"])
+          },
+          no_accounts: true,
+          message: "You don't have any accounts set up yet."
+        }
+      end
+      
+      period = Period.custom(start_date: Date.parse(params["start_date"]), end_date: Date.parse(params["end_date"]))
+      
+      # Check if there are any transactions in the period
+      if family.transactions.where(date: period.start_date..period.end_date).empty?
+        return {
+          currency: family.currency,
+          period: {
+            start_date: period.start_date,
+            end_date: period.end_date
+          },
+          no_transactions: true,
+          message: "You don't have any transactions during this period."
+        }
+      end
+      
+      income_data = family.income_statement.income_totals(period: period)
+      expense_data = family.income_statement.expense_totals(period: period)
 
-    {
-      currency: family.currency,
-      period: {
-        start_date: period.start_date,
-        end_date: period.end_date
-      },
-      income: {
-        total: format_money(income_data.total),
-        by_category: to_ai_category_totals(income_data.category_totals)
-      },
-      expense: {
-        total: format_money(expense_data.total),
-        by_category: to_ai_category_totals(expense_data.category_totals)
-      },
-      insights: get_insights(income_data, expense_data)
-    }
+      {
+        currency: family.currency,
+        period: {
+          start_date: period.start_date,
+          end_date: period.end_date
+        },
+        income: {
+          total: format_money(income_data.total),
+          by_category: to_ai_category_totals(income_data.category_totals)
+        },
+        expense: {
+          total: format_money(expense_data.total),
+          by_category: to_ai_category_totals(expense_data.category_totals)
+        },
+        insights: get_insights(income_data, expense_data)
+      }
+    rescue => e
+      Rails.logger.error "[GetIncomeStatement] Error: #{e.class} - #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      
+      # Return a simpler response that won't cause further issues
+      {
+        currency: family.currency,
+        period: {
+          start_date: params["start_date"] ? Date.parse(params["start_date"]) : Date.current.beginning_of_month,
+          end_date: params["end_date"] ? Date.parse(params["end_date"]) : Date.current
+        },
+        error: true,
+        message: "I couldn't retrieve your income statement at this time."
+      }
+    end
   end
 
   def params_schema

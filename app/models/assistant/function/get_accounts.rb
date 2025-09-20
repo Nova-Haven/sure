@@ -10,23 +10,50 @@ class Assistant::Function::GetAccounts < Assistant::Function
   end
 
   def call(params = {})
-    {
-      as_of_date: Date.current,
-      accounts: family.accounts.includes(:balances).map do |account|
-        {
-          name: account.name,
-          balance: account.balance,
-          currency: account.currency,
-          balance_formatted: account.balance_money.format,
-          classification: account.classification,
-          type: account.accountable_type,
-          start_date: account.start_date,
-          is_plaid_linked: account.plaid_account_id.present?,
-          status: account.status,
-          historical_balances: historical_balances(account)
+    begin
+      Rails.logger.debug "[GetAccounts] Starting to gather account data"
+      
+      # Check if there are any accounts
+      accounts = family.accounts.visible.includes(:balances)
+      
+      if accounts.empty?
+        return {
+          as_of_date: Date.current,
+          accounts: [],
+          no_accounts: true,
+          message: "You don't have any accounts set up yet."
         }
       end
-    }
+      
+      {
+        as_of_date: Date.current,
+        accounts: accounts.map do |account|
+          {
+            name: account.name,
+            balance: account.balance,
+            currency: account.currency,
+            balance_formatted: account.balance_money.format,
+            classification: account.classification,
+            type: account.accountable_type,
+            start_date: account.start_date,
+            is_plaid_linked: account.plaid_account_id.present?,
+            status: account.status,
+            historical_balances: historical_balances(account)
+          }
+        end
+      }
+    rescue => e
+      Rails.logger.error "[GetAccounts] Error: #{e.class} - #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      
+      # Return a simpler response that won't cause further issues
+      {
+        as_of_date: Date.current,
+        accounts: [],
+        error: true,
+        message: "I couldn't retrieve your accounts at this time."
+      }
+    end
   end
 
   private

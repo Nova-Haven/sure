@@ -44,6 +44,12 @@ en:
         add_blacklist_pattern: Add Pattern
         refresh_models: Refresh Models
         title: OpenAI
+      ai_assistant_settings:
+        title: AI Assistant Settings
+        description: Customize the AI assistant name and appearance.
+        assistant_name_label: AI Assistant Name
+        assistant_name_placeholder: Enter assistant name
+        assistant_name_help: The name that will be displayed for the AI assistant throughout the application.
       twelve_data_settings:
         api_calls_used: "%{used} / %{limit} API daily calls used (%{percentage})"
         description: Enter the API key provided by Twelve Data
