@@ -54,6 +54,63 @@ class Settings::HostingsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "should update openai endpoint setting" do
+    with_self_hosting do
+      patch settings_hosting_url, params: {
+        setting: { openai_endpoint: "https://custom.openai.com/v1" }
+      }
+      
+      assert_redirected_to settings_hosting_url
+      assert_equal "https://custom.openai.com/v1", Setting.openai_endpoint
+    end
+  end
+
+  test "should update openai model setting" do
+    with_self_hosting do
+      patch settings_hosting_url, params: {
+        setting: { openai_model: "gpt-4o" }
+      }
+      
+      assert_redirected_to settings_hosting_url
+      assert_equal "gpt-4o", Setting.openai_model
+    end
+  end
+
+  test "should update openai model blacklist" do
+    with_self_hosting do
+      patch settings_hosting_url, params: {
+        setting: { openai_model_blacklist: ["text-embedding", "whisper"] }
+      }
+      
+      assert_redirected_to settings_hosting_url
+      assert_equal ["text-embedding", "whisper"], Setting.openai_model_blacklist
+    end
+  end
+
+  test "should reject invalid endpoint URLs" do
+    with_self_hosting do
+      original_endpoint = Setting.openai_endpoint
+      
+      patch settings_hosting_url, params: {
+        setting: { openai_endpoint: "not-a-valid-url" }
+      }
+      
+      # Should not update the setting with invalid URL
+      assert_equal original_endpoint, Setting.openai_endpoint
+    end
+  end
+
+  test "should filter out blank blacklist entries" do
+    with_self_hosting do
+      patch settings_hosting_url, params: {
+        setting: { openai_model_blacklist: ["text-embedding", "", "whisper", nil] }
+      }
+      
+      assert_redirected_to settings_hosting_url
+      assert_equal ["text-embedding", "whisper"], Setting.openai_model_blacklist
+    end
+  end
+
   test "can clear data cache when self hosting is enabled" do
     account = accounts(:investment)
     holding = account.holdings.first

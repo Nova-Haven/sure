@@ -32,9 +32,6 @@ class Settings::HostingsController < ApplicationController
     end
 
     if hosting_params.key?(:openai_access_token)
-      Setting.openai_access_token = hosting_params[:openai_access_token]
-    end
-    if hosting_params.key?(:openai_access_token)
       token_param = hosting_params[:openai_access_token].to_s.strip
       # Ignore blanks and redaction placeholders to prevent accidental overwrite
       unless token_param.blank? || token_param == "********"
@@ -42,10 +39,46 @@ class Settings::HostingsController < ApplicationController
       end
     end
 
+    if hosting_params.key?(:openai_endpoint)
+      endpoint_param = hosting_params[:openai_endpoint].to_s.strip
+      if endpoint_param.present? && OpenaiModelService.new.validate_endpoint(endpoint_param)
+        Setting.openai_endpoint = endpoint_param
+      end
+    end
+
+    if hosting_params.key?(:openai_model)
+      model_param = hosting_params[:openai_model].to_s.strip
+      Setting.openai_model = model_param if model_param.present?
+    end
+
+    if hosting_params.key?(:openai_model_blacklist)
+      blacklist = hosting_params[:openai_model_blacklist]&.reject(&:blank?) || []
+      Setting.openai_model_blacklist = blacklist
+    end
+
     redirect_to settings_hosting_path, notice: t(".success")
   rescue ActiveRecord::RecordInvalid => error
     flash.now[:alert] = t(".failure")
     render :show, status: :unprocessable_entity
+  end
+
+  def openai_models
+    service = OpenaiModelService.new(
+      endpoint: params[:endpoint],
+      access_token: params[:access_token]
+    )
+    
+    models = service.fetch_models
+    
+    render json: { 
+      models: models,
+      provider_type: service.provider_type
+    }
+  rescue StandardError => e
+    render json: { 
+      error: e.message,
+      models: service.default_models 
+    }, status: :unprocessable_entity
   end
 
   def clear_cache
@@ -55,7 +88,16 @@ class Settings::HostingsController < ApplicationController
 
   private
     def hosting_params
-      params.require(:setting).permit(:require_invite_for_signup, :require_email_confirmation, :brand_fetch_client_id, :twelve_data_api_key, :openai_access_token)
+      params.require(:setting).permit(
+        :require_invite_for_signup, 
+        :require_email_confirmation, 
+        :brand_fetch_client_id, 
+        :twelve_data_api_key, 
+        :openai_access_token,
+        :openai_endpoint,
+        :openai_model,
+        openai_model_blacklist: []
+      )
     end
 
     def ensure_admin

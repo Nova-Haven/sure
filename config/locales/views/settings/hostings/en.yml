@@ -3,9 +3,11 @@ en:
   settings:
     hostings:
       invite_code_settings:
-        description: Every new user that joins your instance of Maybe can only do
+        description:
+          Every new user that joins your instance of Maybe can only do
           so via an invite code
-        email_confirmation_description: When enabled, users must confirm their email
+        email_confirmation_description:
+          When enabled, users must confirm their email
           address when changing it.
         email_confirmation_title: Require email confirmation
         generate_tokens: Generate new code
@@ -27,10 +29,20 @@ en:
         placeholder: Enter your Client ID here
         title: Brand Fetch
       openai_settings:
-        description: Enter the access token provided by OpenAI
-        env_configured_message: Successfully configured through the OPENAI_ACCESS_TOKEN environment variable.
-        label: Access Token
-        placeholder: Enter your access token here
+        description: Configure OpenAI API settings for AI features
+        env_configured_message: Successfully configured through environment variables.
+        access_token_label: Access Token
+        access_token_placeholder: Enter your OpenAI API access token
+        endpoint_label: API Endpoint
+        endpoint_placeholder: https://api.openai.com/v1
+        endpoint_help: Use custom endpoints for OpenRouter, LM Studio, or other OpenAI-compatible services
+        model_label: Default Model
+        model_help: Select the model to use for AI features
+        blacklist_label: Model Blacklist
+        blacklist_help: Hide specific models from the dropdown (supports partial matching)
+        blacklist_pattern_placeholder: e.g., text-embedding, whisper, dall-e
+        add_blacklist_pattern: Add Pattern
+        refresh_models: Refresh Models
         title: OpenAI
       twelve_data_settings:
         api_calls_used: "%{used} / %{limit} API daily calls used (%{percentage})"

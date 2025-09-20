@@ -5,7 +5,41 @@ class Provider::OpenaiTest < ActiveSupport::TestCase
 
   setup do
     @subject = @openai = Provider::Openai.new(ENV.fetch("OPENAI_ACCESS_TOKEN", "test-openai-token"))
-    @subject_model = "gpt-4.1"
+    @subject_model = "gpt-4o-mini"
+  end
+
+  test "accepts custom endpoint in constructor" do
+    custom_endpoint = "https://custom.openai.com/v1"
+    provider = Provider::Openai.new("test-token", endpoint: custom_endpoint)
+    
+    # We can't directly test the endpoint assignment since it's internal to the client
+    # but we can verify the provider was created successfully
+    assert_kind_of Provider::Openai, provider
+  end
+
+  test "supports_model returns true for custom endpoints" do
+    custom_provider = Provider::Openai.new("test-token", endpoint: "https://custom.example.com/v1")
+    
+    # For custom endpoints, should accept any model
+    assert custom_provider.supports_model?("custom-model-name")
+    assert custom_provider.supports_model?("llama-3.1-8b")
+  end
+
+  test "supports_model validates against MODELS for OpenAI endpoint" do
+    openai_provider = Provider::Openai.new("test-token", endpoint: "https://api.openai.com/v1")
+    
+    assert openai_provider.supports_model?("gpt-4o")
+    assert_not openai_provider.supports_model?("custom-unknown-model")
+  end
+
+  test "available_models calls OpenaiModelService" do
+    service_mock = mock
+    service_mock.expects(:fetch_models).returns(["gpt-4o", "gpt-4o-mini"])
+    
+    OpenaiModelService.expects(:new).returns(service_mock)
+    
+    models = @openai.available_models
+    assert_equal ["gpt-4o", "gpt-4o-mini"], models
   end
 
   test "openai errors are automatically raised" do

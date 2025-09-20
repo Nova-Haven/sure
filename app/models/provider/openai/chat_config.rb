@@ -8,10 +8,12 @@ class Provider::Openai::ChatConfig
     functions.map do |fn|
       {
         type: "function",
-        name: fn[:name],
-        description: fn[:description],
-        parameters: fn[:params_schema],
-        strict: fn[:strict]
+        function: {
+          name: fn[:name],
+          description: fn[:description],
+          parameters: fn[:params_schema],
+          strict: fn[:strict]
+        }
       }
     end
   end
@@ -25,8 +27,15 @@ class Provider::Openai::ChatConfig
       }
     end
 
+    # Format content properly for OpenAI-compatible APIs that require type field
+    content = if prompt.is_a?(String)
+      [{ type: "text", text: prompt }]
+    else
+      prompt
+    end
+
     [
-      { role: "user", content: prompt },
+      { role: "user", content: content },
       *results
     ]
   end
