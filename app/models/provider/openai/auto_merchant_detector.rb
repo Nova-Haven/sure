@@ -1,5 +1,5 @@
 class Provider::Openai::AutoMerchantDetector
-  DEFAULT_MODEL = "gpt-4.1-mini"
+  DEFAULT_MODEL = "gpt-4o-mini"
 
   def initialize(client, model: "", transactions:, user_merchants:)
     @client = client

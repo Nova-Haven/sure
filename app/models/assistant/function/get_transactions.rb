@@ -132,51 +132,94 @@ class Assistant::Function::GetTransactions < Assistant::Function
   end
 
   def call(params = {})
-    search_params = params.except("order", "page")
+    begin
+      Rails.logger.debug "[GetTransactions] Starting with params: #{params.inspect}"
+      
+      # Check if there are any accounts first
+      if family.accounts.visible.empty?
+        return {
+          transactions: [],
+          total_results: 0,
+          page: 1,
+          page_size: default_page_size,
+          total_pages: 0,
+          total_income: Money.new(0, family.currency).format,
+          total_expenses: Money.new(0, family.currency).format,
+          no_accounts: true,
+          message: "You don't have any accounts set up yet."
+        }
+      end
+      
+      search_params = params.except("order", "page")
 
-    search = Transaction::Search.new(family, filters: search_params)
-    transactions_query = search.transactions_scope
-    pagy_query = params["order"] == "asc" ? transactions_query.chronological : transactions_query.reverse_chronological
+      search = Transaction::Search.new(family, filters: search_params)
+      transactions_query = search.transactions_scope
+      pagy_query = params["order"] == "asc" ? transactions_query.chronological : transactions_query.reverse_chronological
 
-    # By default, we give a small page size to force the AI to use filters effectively and save on tokens
-    pagy, paginated_transactions = pagy(
-      pagy_query.includes(
-        { entry: :account },
-        :category, :merchant, :tags,
-        transfer_as_outflow: { inflow_transaction: { entry: :account } },
-        transfer_as_inflow: { outflow_transaction: { entry: :account } }
-      ),
-      page: params["page"] || 1,
-      limit: default_page_size
-    )
+      # By default, we give a small page size to force the AI to use filters effectively and save on tokens
+      pagy, paginated_transactions = pagy(
+        pagy_query.includes(
+          { entry: :account },
+          :category, :merchant, :tags,
+          transfer_as_outflow: { inflow_transaction: { entry: :account } },
+          transfer_as_inflow: { outflow_transaction: { entry: :account } }
+        ),
+        page: params["page"] || 1,
+        limit: default_page_size
+      )
 
-    totals = search.totals
+      totals = search.totals
 
-    normalized_transactions = paginated_transactions.map do |txn|
-      entry = txn.entry
+      normalized_transactions = paginated_transactions.map do |txn|
+        entry = txn.entry
+        {
+          date: entry.date,
+          amount: entry.amount.abs,
+          currency: entry.currency,
+          formatted_amount: entry.amount_money.abs.format,
+          classification: entry.amount < 0 ? "income" : "expense",
+          account: entry.account.name,
+          category: txn.category&.name,
+          merchant: txn.merchant&.name,
+          tags: txn.tags.map(&:name),
+          is_transfer: txn.transfer?
+        }
+      end
+
+      result = {
+        transactions: normalized_transactions,
+        total_results: pagy.count,
+        page: pagy.page,
+        page_size: default_page_size,
+        total_pages: pagy.pages,
+        total_income: totals.income_money.format,
+        total_expenses: totals.expense_money.format
+      }
+      
+      # Add a message if no transactions were found but accounts exist
+      if normalized_transactions.empty? && pagy.count == 0
+        result[:no_transactions] = true
+        result[:message] = "No transactions found matching your criteria."
+      end
+      
+      result
+    rescue => e
+      Rails.logger.error "[GetTransactions] Error: #{e.class} - #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      
+      # Return a simpler response that won't cause further issues
       {
-        date: entry.date,
-        amount: entry.amount.abs,
-        currency: entry.currency,
-        formatted_amount: entry.amount_money.abs.format,
-        classification: entry.amount < 0 ? "income" : "expense",
-        account: entry.account.name,
-        category: txn.category&.name,
-        merchant: txn.merchant&.name,
-        tags: txn.tags.map(&:name),
-        is_transfer: txn.transfer?
+        transactions: [],
+        total_results: 0,
+        page: 1,
+        page_size: default_page_size,
+        total_pages: 0,
+        total_income: Money.new(0, family.currency).format,
+        total_expenses: Money.new(0, family.currency).format,
+        error: true,
+        message: "I couldn't retrieve your transactions at this time."
       }
     end
-
-    {
-      transactions: normalized_transactions,
-      total_results: pagy.count,
-      page: pagy.page,
-      page_size: default_page_size,
-      total_pages: pagy.pages,
-      total_income: totals.income_money.format,
-      total_expenses: totals.expense_money.format
-    }
   end
 
   private

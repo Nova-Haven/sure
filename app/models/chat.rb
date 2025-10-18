@@ -43,13 +43,25 @@ class Chat < ApplicationRecord
   end
 
   def add_error(e)
-    update! error: e.to_json
+    Rails.logger.error "[Chat] Adding error: #{e.class} - #{e.message}"
+    error_data = {
+      message: e.message,
+      class: e.class.name,
+      backtrace: e.backtrace&.first(5),
+      time: Time.current.iso8601
+    }
+    update! error: error_data.to_json
     broadcast_append target: "messages", partial: "chats/error", locals: { chat: self }
   end
 
   def clear_error
-    update! error: nil
-    broadcast_remove target: "chat-error"
+    if error.present?
+      Rails.logger.debug "[Chat] Clearing error state"
+      update! error: nil
+      
+      # Send a specific broadcast to remove the error element
+      broadcast_remove_to self, target: "chat-error"
+    end
   end
 
   def assistant

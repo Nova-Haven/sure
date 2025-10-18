@@ -10,9 +10,23 @@ class Assistant::FunctionToolCaller
 
   def fulfill_requests(function_requests)
     function_requests.map do |function_request|
-      result = execute(function_request)
-
-      ToolCall::Function.from_function_request(function_request, result)
+      Rails.logger.debug "[FunctionToolCaller] Executing function request: #{function_request.function_name}"
+      begin
+        result = execute(function_request)
+        Rails.logger.debug "[FunctionToolCaller] Function executed successfully"
+        
+        ToolCall::Function.from_function_request(function_request, result)
+      rescue => e
+        Rails.logger.error "[FunctionToolCaller] Error executing function #{function_request.function_name}: #{e.message}"
+        Rails.logger.error e.backtrace.join("\n")
+        
+        # Return a graceful error message that can be displayed to the user
+        error_result = {
+          error: true,
+          message: "I couldn't retrieve your financial data. Please try again or ask a different question."
+        }
+        ToolCall::Function.from_function_request(function_request, error_result)
+      end
     end
   end
 

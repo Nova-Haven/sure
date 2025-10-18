@@ -22,25 +22,34 @@ class Provider
     UsageData = Data.define(:used, :limit, :utilization, :plan)
 
     def with_provider_response(error_transformer: nil, &block)
-      data = yield
+      Rails.logger.debug "[Provider] Starting with_provider_response"
+      begin
+        data = yield
+        Rails.logger.debug "[Provider] Successfully got data from block"
 
-      Response.new(
-        success?: true,
-        data: data,
-        error: nil,
-      )
-    rescue => error
-      transformed_error = if error_transformer
-        error_transformer.call(error)
-      else
-        default_error_transformer(error)
+        Response.new(
+          success?: true,
+          data: data,
+          error: nil,
+        )
+      rescue => error
+        Rails.logger.error "[Provider] Error in with_provider_response: #{error.class} - #{error.message}"
+        Rails.logger.error error.backtrace.join("\n")
+        
+        transformed_error = if error_transformer
+          error_transformer.call(error)
+        else
+          default_error_transformer(error)
+        end
+
+        Rails.logger.error "[Provider] Transformed error: #{transformed_error.class} - #{transformed_error.message}"
+
+        Response.new(
+          success?: false,
+          data: nil,
+          error: transformed_error
+        )
       end
-
-      Response.new(
-        success?: false,
-        data: nil,
-        error: transformed_error
-      )
     end
 
     # Override to set class-level error transformation for methods using `with_provider_response`

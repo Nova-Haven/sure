@@ -10,6 +10,9 @@ class ChatsController < ApplicationController
 
   def show
     set_last_viewed_chat(@chat)
+    
+    # Clear any errors when viewing the chat
+    @chat.clear_error if @chat.error.present?
   end
 
   def new

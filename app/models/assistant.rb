@@ -17,18 +17,22 @@ class Assistant
   end
 
   def respond_to(message)
-    assistant_message = AssistantMessage.new(
-      chat: chat,
-      content: "",
-      ai_model: message.ai_model
-    )
+    # Clear any existing errors on the chat
+    chat.clear_error
+    
+    begin
+      assistant_message = AssistantMessage.new(
+        chat: chat,
+        content: "",
+        ai_model: message.ai_model
+      )
 
-    responder = Assistant::Responder.new(
-      message: message,
-      instructions: instructions,
-      function_tool_caller: function_tool_caller,
-      llm: get_model_provider(message.ai_model)
-    )
+      responder = Assistant::Responder.new(
+        message: message,
+        instructions: instructions,
+        function_tool_caller: function_tool_caller,
+        llm: get_model_provider(message.ai_model)
+      )
 
     latest_response_id = chat.latest_assistant_response_id
 
@@ -52,14 +56,33 @@ class Assistant
         assistant_message.tool_calls = data[:function_tool_calls]
         latest_response_id = data[:id]
       else
+        # If this is the final response and no tool calls, make sure thinking stops
+        stop_thinking
         chat.update_latest_response!(data[:id])
       end
     end
 
     responder.respond(previous_response_id: latest_response_id)
-  rescue => e
+    
+    # Ensure the assistant message gets saved and broadcasted even if no text was appended
+    unless assistant_message.persisted?
+      Rails.logger.debug "[Assistant] Saving assistant message that wasn't previously persisted"
+      assistant_message.save!
+    end
+    
+    # Make sure thinking indicator is removed
+    Rails.logger.debug "[Assistant] Stopping thinking indicator"
     stop_thinking
-    chat.add_error(e)
+    
+    # If we got this far, make sure to clear any error state
+    chat.clear_error
+    
+    rescue => e
+      Rails.logger.error "[Assistant] Error during response: #{e.class} - #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      stop_thinking
+      chat.add_error(e)
+    end
   end
 
   private
