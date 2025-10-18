@@ -58,7 +58,7 @@ class Assistant::Responder
         previous_response_id: response.id
       )
     end
-
+    
     def get_llm_response(streamer:, function_results: [], previous_response_id: nil)
       Rails.logger.debug "[Assistant::Responder] Getting LLM response with function_results: #{function_results.inspect}"
       Rails.logger.debug "[Assistant::Responder] LLM: #{llm.class.name}"
@@ -75,19 +75,18 @@ class Assistant::Responder
         user_identifier: chat_user_identifier
       )
 
-        unless response.success?
-          Rails.logger.error "[Assistant::Responder] LLM response error: #{response.error.class} - #{response.error.message}"
-          Rails.logger.error response.error.backtrace.join("\n") if response.error.respond_to?(:backtrace)
-          raise response.error
-        end
-
-        Rails.logger.debug "[Assistant::Responder] Got successful LLM response"
-        response.data
-      rescue => e
-        Rails.logger.error "[Assistant::Responder] Error getting LLM response: #{e.class} - #{e.message}"
-        Rails.logger.error e.backtrace.join("\n") if e.respond_to?(:backtrace)
-        raise e
+      unless response.success?
+        Rails.logger.error "[Assistant::Responder] LLM response error: #{response.error.class} - #{response.error.message}"
+        Rails.logger.error response.error.backtrace.join("\n") if response.error.respond_to?(:backtrace)
+        raise response.error
       end
+
+      Rails.logger.debug "[Assistant::Responder] Got successful LLM response"
+      response.data
+    rescue => e
+      Rails.logger.error "[Assistant::Responder] Error getting LLM response: #{e.class} - #{e.message}"
+      Rails.logger.error e.backtrace.join("\n") if e.respond_to?(:backtrace)
+      raise e
     end
     
     def emit(event_name, payload = nil)
