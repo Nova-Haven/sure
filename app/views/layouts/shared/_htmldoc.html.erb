@@ -7,8 +7,7 @@
   data-theme="<%= theme %>"
   data-controller="theme viewport"
   data-theme-user-preference-value="<%= Current.user&.theme || "system" %>"
-  class="h-full text-primary overflow-hidden font-sans app-no-overscroll <%= @os %>"
-  style="--bg: #0b0b0b;">
+  class="h-full text-primary overflow-hidden font-sans app-no-overscroll <%= @os %>">
   <head>
     <%= render "layouts/shared/head" %>
     <%= yield :head %>

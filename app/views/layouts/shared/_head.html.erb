@@ -28,15 +28,4 @@
   <link rel="apple-touch-icon" sizes="512x512" href="/logo-pwa.png">
 
   <%= yield :head %>
-  <script>
-    // Small, fast initial set of --vh to avoid initial rendering without a viewport value.
-    (function(){
-      try {
-        var vh = window.innerHeight * 0.01;
-        document.documentElement.style.setProperty('--vh', vh + 'px');
-      } catch (e) {
-        // noop
-      }
-    })();
-  </script>
 </head>

@@ -5,13 +5,16 @@
 :root {
   /* fallback for environments without JS */
   --vh: 1vh;
+  /* default app background (centralized) */
+  --bg: #0b0b0b;
 }
 
 /* Don't set the html/body height here — that can interfere with fixed positioning and
    cause surprising extra scroll on some desktop setups. Only disable overscroll via
    the app-no-overscroll class; let the app's top-level wrapper receive the dynamic
    viewport min-height. */
-html.app-no-overscroll, body.app-no-overscroll {
+html.app-no-overscroll,
+body.app-no-overscroll {
   overscroll-behavior: none; /* prevent viewport from being pulled to reveal background on supporting browsers */
 }
 
@@ -24,20 +27,33 @@ html.app-no-overscroll, body.app-no-overscroll {
      Include safe-area insets so the container covers the notch and bottom
      area on iOS PWAs. Use both height and min-height so scrolling works
      reliably across browsers and when devtools/overlays change the viewport size. */
-  height: calc(var(--vh, 1vh) * 100 + env(safe-area-inset-top) + env(safe-area-inset-bottom));
-  min-height: calc(var(--vh, 1vh) * 100 + env(safe-area-inset-top) + env(safe-area-inset-bottom));
+  height: calc(
+    var(--vh, 1vh) * 100 + env(safe-area-inset-top) +
+      env(safe-area-inset-bottom)
+  );
+  min-height: calc(
+    var(--vh, 1vh) * 100 + env(safe-area-inset-top) +
+      env(safe-area-inset-bottom)
+  );
 }
 
 /* Ensure background covers safe areas (iOS notch/safe area) */
-html, body {
-  background-color: var(--bg, #F9F9F9);
+html,
+body {
+  background-color: var(--bg, #f9f9f9);
 }
 
 @layer utilities {
   /* Tailwind utility for the dynamic viewport height */
   .full-vh {
-    height: calc(var(--vh, 1vh) * 100 + env(safe-area-inset-top) + env(safe-area-inset-bottom)) !important;
-    min-height: calc(var(--vh, 1vh) * 100 + env(safe-area-inset-top) + env(safe-area-inset-bottom)) !important;
+    height: calc(
+      var(--vh, 1vh) * 100 + env(safe-area-inset-top) +
+        env(safe-area-inset-bottom)
+    ) !important;
+    min-height: calc(
+      var(--vh, 1vh) * 100 + env(safe-area-inset-top) +
+        env(safe-area-inset-bottom)
+    ) !important;
   }
   .min-full-vh {
     min-height: calc(var(--vh, 1vh) * 100) !important;
