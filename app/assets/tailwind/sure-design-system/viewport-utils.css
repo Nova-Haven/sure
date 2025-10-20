@@ -1,0 +1,45 @@
+/* Viewport utilities to avoid 100vh issues on mobile PWAs (iOS) and desktop PWAs.
+   These use a JS-updated --vh custom property (set by the Stimulus `viewport_controller`) to
+   compute true viewport height and expose utilities for layout use. */
+
+:root {
+  /* fallback for environments without JS */
+  --vh: 1vh;
+}
+
+/* Don't set the html/body height here — that can interfere with fixed positioning and
+   cause surprising extra scroll on some desktop setups. Only disable overscroll via
+   the app-no-overscroll class; let the app's top-level wrapper receive the dynamic
+   viewport min-height. */
+html.app-no-overscroll, body.app-no-overscroll {
+  overscroll-behavior: none; /* prevent viewport from being pulled to reveal background on supporting browsers */
+}
+
+/* Utility to make an element the full viewport height using the --vh custom property.
+   Use min-height so elements can grow if their contents require more space; this
+   avoids locking layout and prevents white gaps when devtools or overlays change
+   the viewport size. */
+.full-vh {
+  /* Ensure the element matches the computed viewport height immediately.
+     Include safe-area insets so the container covers the notch and bottom
+     area on iOS PWAs. Use both height and min-height so scrolling works
+     reliably across browsers and when devtools/overlays change the viewport size. */
+  height: calc(var(--vh, 1vh) * 100 + env(safe-area-inset-top) + env(safe-area-inset-bottom));
+  min-height: calc(var(--vh, 1vh) * 100 + env(safe-area-inset-top) + env(safe-area-inset-bottom));
+}
+
+/* Ensure background covers safe areas (iOS notch/safe area) */
+html, body {
+  background-color: var(--bg, #F9F9F9);
+}
+
+@layer utilities {
+  /* Tailwind utility for the dynamic viewport height */
+  .full-vh {
+    height: calc(var(--vh, 1vh) * 100 + env(safe-area-inset-top) + env(safe-area-inset-bottom)) !important;
+    min-height: calc(var(--vh, 1vh) * 100 + env(safe-area-inset-top) + env(safe-area-inset-bottom)) !important;
+  }
+  .min-full-vh {
+    min-height: calc(var(--vh, 1vh) * 100) !important;
+  }
+}
