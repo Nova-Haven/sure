@@ -1,4 +1,3 @@
-
 <img width="1190" alt="sure_hero" src="https://github.com/user-attachments/assets/959f6e9f-2d8a-4f8c-893e-cd3e6eeb4ff2" />
 
 <p align="center">
@@ -15,11 +14,36 @@
 
 # ~Maybe~Sure: The personal finance app for everyone
 
+> IMPORTANT: This repository is a community fork of the we-promise fork of Maybe Finance's app.
+>
+> This fork continues the work started by the original Maybe Finance project and the community-maintained
+> "we-promise" fork. The goals of this repository include: enabling local LLM support, fixing long-standing
+> PWA issues that previously had unmerged pull requests, and merging or implementing other stalled changes
+> that the previous maintainers couldn't land due to time constraints. If you're here to self-host, contribute,
+> or run local language models with the app, this fork exists to make that practical.
+
+[![community fork](https://img.shields.io/badge/fork-community-brightgreen.svg)](https://github.com/Nova-Haven/sure)
+
+## Why this fork?
+
+This repository explicitly focuses on completing and maintaining changes that the upstream maintainers (and the earlier community fork) were unable to land. Key targets include:
+
+- Local LLM / OpenAI-compatible provider support (see issue: https://github.com/we-promise/sure/issues/17 — related PR: https://github.com/we-promise/sure/pull/139)
+- Progressive Web App (PWA) improvements and fixes — longstanding issue: https://github.com/we-promise/sure/issues/149 and related migrated PRs: https://github.com/we-promise/sure/pull/69 and https://github.com/we-promise/sure/pull/172
+
+This fork's current approach prioritizes shipping functional fixes and improvements (including on-device testing) and defers comprehensive test authoring until behavior is stabilized. Tests will be added incrementally after features are validated on devices and in local environments.
+
+Move fast, test things, fix them, ship again.
+
+Below is the original README of the we-promise fork.
+
+---
+
 <b>Get
 involved: [Discord](https://discord.gg/36ZGBsxYEK) • [(archived) Website](https://web.archive.org/web/20250715182050/https://maybefinance.com/) • [Issues](https://github.com/we-promise/sure/issues)</b>
 
 > [!IMPORTANT]
-> This repository is a community fork of the now-abandoned Maybe Finance project. 
+> This repository is a community fork of the now-abandoned Maybe Finance project.
 > Learn more in their [final release](https://github.com/maybe-finance/maybe/releases/tag/v0.6.0) doc.
 
 ## Backstory
@@ -62,6 +86,7 @@ The instructions below are for developers to get started with contributing to th
 - PostgreSQL >9.3 (latest stable version recommended)
 
 ### Getting Started
+
 ```sh
 cd sure
 cp .env.local.example .env.local
@@ -90,5 +115,6 @@ For further instructions, see guides below.
 
 Maybe and Sure are both distributed under
 an [AGPLv3 license](https://github.com/we-promise/sure/blob/main/LICENSE).
+
 - "Maybe" is a trademark of Maybe Finance, Inc.
 - "Sure" is not, and refers to this community fork.
