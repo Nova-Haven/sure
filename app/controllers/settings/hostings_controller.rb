@@ -39,32 +39,25 @@ class Settings::HostingsController < ApplicationController
       end
     end
 
-    if hosting_params.key?(:openai_endpoint)
-      endpoint_param = hosting_params[:openai_endpoint].to_s.strip
-      if endpoint_param.present? && OpenaiModelService.new.validate_endpoint(endpoint_param)
-        Setting.openai_endpoint = endpoint_param
-      end
+    # Validate OpenAI configuration before updating
+    if hosting_params.key?(:openai_uri_base) || hosting_params.key?(:openai_model)
+      Setting.validate_openai_config!(
+        uri_base: hosting_params[:openai_uri_base],
+        model: hosting_params[:openai_model]
+      )
+    end
+
+    if hosting_params.key?(:openai_uri_base)
+      Setting.openai_uri_base = hosting_params[:openai_uri_base]
     end
 
     if hosting_params.key?(:openai_model)
-      model_param = hosting_params[:openai_model].to_s.strip
-      Setting.openai_model = model_param if model_param.present?
-    end
-
-    if hosting_params.key?(:openai_model_blacklist)
-      blacklist_param = hosting_params[:openai_model_blacklist].to_s.strip
-      blacklist = blacklist_param.split(',').map(&:strip).reject(&:blank?)
-      Setting.openai_model_blacklist = blacklist
-    end
-
-    if hosting_params.key?(:ai_assistant_name)
-      assistant_name = hosting_params[:ai_assistant_name].to_s.strip
-      Setting.ai_assistant_name = assistant_name if assistant_name.present?
+      Setting.openai_model = hosting_params[:openai_model]
     end
 
     redirect_to settings_hosting_path, notice: t(".success")
-  rescue ActiveRecord::RecordInvalid => error
-    flash.now[:alert] = t(".failure")
+  rescue Setting::ValidationError => error
+    flash.now[:alert] = error.message
     render :show, status: :unprocessable_entity
   end
 
@@ -94,17 +87,7 @@ class Settings::HostingsController < ApplicationController
 
   private
     def hosting_params
-      params.require(:setting).permit(
-        :require_invite_for_signup, 
-        :require_email_confirmation, 
-        :brand_fetch_client_id, 
-        :twelve_data_api_key, 
-        :openai_access_token,
-        :openai_endpoint,
-        :openai_model,
-        :openai_model_blacklist,
-        :ai_assistant_name
-      )
+      params.require(:setting).permit(:require_invite_for_signup, :require_email_confirmation, :brand_fetch_client_id, :twelve_data_api_key, :openai_access_token, :openai_uri_base, :openai_model, :ai_assistant_name)
     end
 
     def ensure_admin

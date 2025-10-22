@@ -28,69 +28,26 @@
                           disabled: ENV["OPENAI_ACCESS_TOKEN"].present?,
                           data: { "auto-submit-form-target": "auto" } %>
 
-  <!-- Endpoint URL -->
-  <%= form.text_field :openai_endpoint,
-                      label: t(".endpoint_label"),
-                      placeholder: t(".endpoint_placeholder"),
-                      value: Setting.openai_endpoint,
+  <%= form.text_field :openai_uri_base,
+                      label: t(".uri_base_label"),
+                      placeholder: t(".uri_base_placeholder"),
+                      value: Setting.openai_uri_base,
                       autocomplete: "off",
+                      autocapitalize: "none",
                       spellcheck: "false",
-                      disabled: ENV["OPENAI_ENDPOINT"].present?,
-                      help_text: t(".endpoint_help"),
-                      data: { 
-                        "auto-submit-form-target": "auto",
-                        "openai-settings-target": "endpoint",
-                        action: "change->openai-settings#endpointChanged"
-                      } %>
+                      inputmode: "url",
+                      disabled: ENV["OPENAI_URI_BASE"].present?,
+                      data: { "auto-submit-form-target": "auto" } %>
 
-  <!-- Model Selection -->
-  <div data-openai-settings-target="modelContainer">
-    <%= form.select :openai_model,
-                    options_for_select(
-                      OpenaiModelService.new.fetch_models.map { |model| [model, model] },
-                      Setting.openai_model
-                    ),
-                    { 
+  <%= form.text_field :openai_model,
                       label: t(".model_label"),
-                      help_text: t(".model_help")
-                    },
-                    {
-                      disabled: ENV["OPENAI_MODEL"].present?,
-                      data: { 
-                        "auto-submit-form-target": "auto",
-                        "openai-settings-target": "modelSelect"
-                      }
-                    } %>
-  </div>
-
-  <!-- Model Blacklist -->
-  <%= form.text_field :openai_model_blacklist,
-                      label: t(".blacklist_label"),
-                      placeholder: t(".blacklist_pattern_placeholder"),
-                      value: Setting.openai_model_blacklist.join(", "),
+                      placeholder: t(".model_placeholder"),
+                      value: Setting.openai_model,
                       autocomplete: "off",
+                      autocapitalize: "none",
                       spellcheck: "false",
-                      help_text: t(".blacklist_help"),
-                      data: { 
-                        "auto-submit-form-target": "auto",
-                        "openai-settings-target": "blacklist",
-                        action: "change->openai-settings#blacklistChanged"
-                      } %>
-
-  <!-- Refresh Models Button -->
-  <div class="flex items-center gap-2">
-    <%= button_tag t(".refresh_models"), 
-                   type: "button",
-                   class: "rounded-md border border-primary bg-container px-3 py-2 text-sm text-primary hover:bg-surface-default",
-                   data: { 
-                     action: "click->openai-settings#refreshModels",
-                     "openai-settings-target": "refreshButton"
-                   } %>
-    
-    <div data-openai-settings-target="providerInfo" class="text-xs text-secondary">
-      <!-- Provider info will be populated by Stimulus -->
-    </div>
-  </div>
-
+                      inputmode: "text",
+                      disabled: ENV["OPENAI_MODEL"].present?,
+                      data: { "auto-submit-form-target": "auto" } %>
   <% end %>
 </div>
