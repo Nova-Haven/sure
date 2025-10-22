@@ -4,7 +4,7 @@ class OpenaiModelService
   class Error < StandardError; end
 
   def initialize(endpoint: nil, access_token: nil)
-    @endpoint = endpoint || Setting.openai_endpoint || "https://api.openai.com/v1"
+    @endpoint = endpoint || Setting.openai_uri_base || "https://api.openai.com/v1"
     @access_token = access_token || Setting.openai_access_token
   end
 
@@ -25,11 +25,16 @@ class OpenaiModelService
 
       if response.success?
         models = response.parsed_response.dig("data") || []
-        models
+        filtered_models = models
           .map { |model| model["id"] }
           .compact
           .sort
           .reject { |model| blacklisted?(model) }
+        
+        Rails.logger.debug "Raw models from API: #{models.map { |m| m['id'] }.inspect}"
+        Rails.logger.debug "Filtered models: #{filtered_models.inspect}"
+        
+        filtered_models
       else
         Rails.logger.warn("Failed to fetch OpenAI models: #{response.code} #{response.message}")
         default_models
@@ -142,6 +147,13 @@ class OpenaiModelService
 
   def blacklisted?(model)
     blacklist = Setting.openai_model_blacklist || []
-    blacklist.any? { |pattern| model.match?(/#{Regexp.escape(pattern)}/i) }
+    # Add common non-chat model patterns if not already blacklisted
+    default_blacklist_patterns = [
+      "text-embedding", "text-search", "text-similarity", "whisper", "tts", 
+      "dall-e", "davinci-edit", "babbage", "ada", "curie"
+    ]
+    
+    all_patterns = (blacklist + default_blacklist_patterns).uniq
+    all_patterns.any? { |pattern| model.match?(/#{Regexp.escape(pattern)}/i) }
   end
 end

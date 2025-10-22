@@ -21,6 +21,12 @@ class Assistant
     chat.clear_error
     
     begin
+      # Check if we have a provider that supports the model
+      llm_provider = get_model_provider(message.ai_model)
+      unless llm_provider
+        raise StandardError, "No provider available that supports model: #{message.ai_model}"
+      end
+
       assistant_message = AssistantMessage.new(
         chat: chat,
         content: "",
@@ -31,7 +37,7 @@ class Assistant
         message: message,
         instructions: instructions,
         function_tool_caller: function_tool_caller,
-        llm: get_model_provider(message.ai_model)
+        llm: llm_provider
       )
 
     latest_response_id = chat.latest_assistant_response_id

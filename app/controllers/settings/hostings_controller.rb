@@ -41,10 +41,14 @@ class Settings::HostingsController < ApplicationController
 
     # Validate OpenAI configuration before updating
     if hosting_params.key?(:openai_uri_base) || hosting_params.key?(:openai_model)
-      Setting.validate_openai_config!(
-        uri_base: hosting_params[:openai_uri_base],
-        model: hosting_params[:openai_model]
-      )
+      # Only validate if we're not just setting the URI base to fetch models
+      # Skip validation if model is empty and we're setting URI base (user might be fetching models)
+      unless hosting_params[:openai_model] == "" && hosting_params.key?(:openai_uri_base)
+        Setting.validate_openai_config!(
+          uri_base: hosting_params[:openai_uri_base],
+          model: hosting_params[:openai_model]
+        )
+      end
     end
 
     if hosting_params.key?(:openai_uri_base)
@@ -52,7 +56,9 @@ class Settings::HostingsController < ApplicationController
     end
 
     if hosting_params.key?(:openai_model)
+      Rails.logger.info "Updating OpenAI model from #{Setting.openai_model} to #{hosting_params[:openai_model]}"
       Setting.openai_model = hosting_params[:openai_model]
+      Rails.logger.info "OpenAI model after update: #{Setting.openai_model}"
     end
 
     redirect_to settings_hosting_path, notice: t(".success")
@@ -69,14 +75,24 @@ class Settings::HostingsController < ApplicationController
     
     models = service.fetch_models
     
+    # Store models in session for next page load
+    session[:openai_models] = models
+    
+    Rails.logger.debug "Fetched models: #{models.inspect}"
+    
     render json: { 
       models: models,
       provider_type: service.provider_type
     }
   rescue StandardError => e
+    Rails.logger.error "Error fetching models: #{e.message}"
+    # Store default models in session even on error
+    default_models = service.default_models
+    session[:openai_models] = default_models
+    
     render json: { 
       error: e.message,
-      models: service.default_models 
+      models: default_models 
     }, status: :unprocessable_entity
   end
 
@@ -87,7 +103,7 @@ class Settings::HostingsController < ApplicationController
 
   private
     def hosting_params
-      params.require(:setting).permit(:require_invite_for_signup, :require_email_confirmation, :brand_fetch_client_id, :twelve_data_api_key, :openai_access_token, :openai_uri_base, :openai_model, :ai_assistant_name)
+      params.require(:setting).permit(:require_invite_for_signup, :require_email_confirmation, :brand_fetch_client_id, :twelve_data_api_key, :openai_access_token, :openai_uri_base, :openai_model, :openai_model_blacklist, :ai_assistant_name)
     end
 
     def ensure_admin

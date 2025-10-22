@@ -62,7 +62,7 @@ class Provider::Registry
 
       def openai
         access_token = ENV.fetch("OPENAI_ACCESS_TOKEN", Setting.openai_access_token)
-        endpoint = ENV.fetch("OPENAI_ENDPOINT", Setting.openai_endpoint)
+        endpoint = ENV.fetch("OPENAI_ENDPOINT", Setting.openai_uri_base)
 
         # For local endpoints (localhost, 127.0.0.1, host.docker.internal), 
         # use a dummy token if none is provided since local LLMs often don't need auth

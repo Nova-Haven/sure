@@ -8,6 +8,10 @@ class Setting < RailsSettings::Base
   field :openai_access_token, type: :string, default: ENV["OPENAI_ACCESS_TOKEN"]
   field :openai_uri_base, type: :string, default: ENV["OPENAI_URI_BASE"]
   field :openai_model, type: :string, default: ENV["OPENAI_MODEL"]
+  field :openai_model_blacklist, type: :array, default: [
+    "text-embedding", "text-search", "text-similarity", "text-davinci-edit", 
+    "code-davinci-edit", "whisper", "tts", "dall-e"
+  ]
   field :ai_assistant_name, type: :string, default: ENV.fetch("AI_ASSISTANT_NAME", "Surely")
   field :brand_fetch_client_id, type: :string, default: ENV["BRAND_FETCH_CLIENT_ID"]
 

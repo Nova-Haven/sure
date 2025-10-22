@@ -13,7 +13,7 @@
                        method: :patch,
                        data: {
                          controller: "auto-submit-form openai-settings",
-                         "auto-submit-form-trigger-event-value": "blur"
+                         "auto-submit-form-trigger-event-value": "change"
                        } do |form| %>
   
   <!-- API Access Token -->
@@ -25,7 +25,7 @@
                           autocapitalize: "none",
                           spellcheck: "false",
                           inputmode: "text",
-                          disabled: ENV["OPENAI_ACCESS_TOKEN"].present?,
+                          disabled: false, # Allow overriding ENV variables
                           data: { "auto-submit-form-target": "auto" } %>
 
   <%= form.text_field :openai_uri_base,
@@ -36,18 +36,69 @@
                       autocapitalize: "none",
                       spellcheck: "false",
                       inputmode: "url",
-                      disabled: ENV["OPENAI_URI_BASE"].present?,
-                      data: { "auto-submit-form-target": "auto" } %>
+                      disabled: false, # Allow overriding ENV variables
+                      data: { 
+                        "auto-submit-form-target": "auto",
+                        "openai-settings-target": "endpoint",
+                        action: "change->openai-settings#endpointChanged"
+                      } %>
 
-  <%= form.text_field :openai_model,
+  <!-- Model Selection Container -->
+  <div data-openai-settings-target="modelContainer">
+    <% 
+      current_model = Setting.openai_model
+      Rails.logger.info "Rendering model select with current_model: #{current_model}"
+      
+      # Try to get previously loaded models from session if available
+      previous_models = session[:openai_models] || []
+      
+      initial_options = if current_model.present? && previous_models.any?
+        # We have both a selected model and previously loaded models - show all
+        options = [["Select a model...", ""]]
+        options += previous_models.map { |model| [model, model] }
+        # Ensure current model is in the list (in case it's custom)
+        unless previous_models.include?(current_model)
+          options << ["#{current_model} (custom)", current_model]
+        end
+        options
+      elsif current_model.present?
+        # We have a selected model but no cached models - show minimal
+        [["Select a model...", ""], [current_model, current_model]]
+      else
+        # No selected model
+        [["Select a model...", ""]]
+      end
+    %>
+    <%= form.select :openai_model,
+                    options_for_select(initial_options, current_model),
+                    { 
+                      selected: current_model,
+                      prompt: false
+                    },
+                    {
                       label: t(".model_label"),
-                      placeholder: t(".model_placeholder"),
-                      value: Setting.openai_model,
-                      autocomplete: "off",
-                      autocapitalize: "none",
-                      spellcheck: "false",
-                      inputmode: "text",
-                      disabled: ENV["OPENAI_MODEL"].present?,
-                      data: { "auto-submit-form-target": "auto" } %>
+                      disabled: false, # Allow overriding ENV variables
+                      data: {
+                        "auto-submit-form-target": "auto",
+                        "openai-settings-target": "modelSelect"
+                      }
+                    } %>
+  </div>
+
+  <!-- Refresh Models Button -->
+  <div class="flex items-center gap-2">
+    <%= render DS::Button.new(
+          variant: :secondary, 
+          size: :sm, 
+          text: "Refresh Models",
+          icon: "refresh-cw",
+          data: {
+            "openai-settings-target": "refreshButton",
+            action: "click->openai-settings#refreshModels"
+          }
+        ) %>
+    <span class="text-sm text-secondary" data-openai-settings-target="providerInfo"></span>
+  </div>
+
   <% end %>
 </div>
