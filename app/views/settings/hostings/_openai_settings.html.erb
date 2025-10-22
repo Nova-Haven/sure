@@ -100,5 +100,96 @@
     <span class="text-sm text-secondary" data-openai-settings-target="providerInfo"></span>
   </div>
 
+  <!-- Suggestions for whitelist/blacklist inputs -->
+  <datalist id="openai-model-suggestions" data-openai-settings-target="suggestionsList"></datalist>
+
+  <!-- Model Whitelist -->
+  <div class="mt-4">
+    <label class="block text-sm font-medium mb-1">Model whitelist</label>
+    <p class="text-xs text-secondary mb-2">Exact matches shown even if blacklisted. Add multiple entries.</p>
+    <div data-openai-settings-target="whitelistContainer">
+      <% Array(Setting.openai_model_whitelist).each do |entry| %>
+        <div data-entry-row class="flex items-center gap-2 mb-2">
+          <input type="text"
+                 name="setting[openai_model_whitelist][]"
+                 value="<%= entry %>"
+                 list="openai-model-suggestions"
+                 class="input w-full"
+                 data-openai-settings-target="whitelist"
+                 data-action="change->openai-settings#whitelistChanged" />
+          <button type="button"
+                  class="btn btn-ghost btn-sm"
+                  data-action="click->openai-settings#removeEntry"
+                  aria-label="Remove">✕</button>
+        </div>
+      <% end %>
+      <!-- Always keep one empty row so a new entry isn't lost on autosave -->
+      <div data-entry-row class="flex items-center gap-2 mb-2">
+        <input type="text"
+               name="setting[openai_model_whitelist][]"
+               value=""
+               list="openai-model-suggestions"
+               class="input w-full"
+               data-openai-settings-target="whitelist"
+               data-action="change->openai-settings#whitelistChanged" />
+        <button type="button"
+                class="btn btn-ghost btn-sm"
+                data-action="click->openai-settings#removeEntry"
+                aria-label="Remove">✕</button>
+      </div>
+    </div>
+    <%= render DS::Button.new(
+      variant: :ghost,
+      size: :sm,
+          text: "Add",
+          icon: "plus",
+          data: { action: "click->openai-settings#addWhitelistEntry" }
+        ) %>
+  </div>
+
+  <!-- Model Blacklist -->
+  <div class="mt-4">
+    <label class="block text-sm font-medium mb-1">Model blacklist</label>
+    <p class="text-xs text-secondary mb-2">Substring match; e.g., adding "text-embedding" hides models like "text-embedding-01".</p>
+    <div data-openai-settings-target="blacklistContainer">
+      <% Array(Setting.openai_model_blacklist).each do |entry| %>
+        <div data-entry-row class="flex items-center gap-2 mb-2">
+          <input type="text"
+                 name="setting[openai_model_blacklist][]"
+                 value="<%= entry %>"
+                 list="openai-model-suggestions"
+                 class="input w-full"
+                 data-openai-settings-target="blacklist"
+                 data-action="change->openai-settings#blacklistChanged" />
+          <button type="button"
+                  class="btn btn-ghost btn-sm"
+                  data-action="click->openai-settings#removeEntry"
+                  aria-label="Remove">✕</button>
+        </div>
+      <% end %>
+      <!-- Always keep one empty row so a new entry isn't lost on autosave -->
+      <div data-entry-row class="flex items-center gap-2 mb-2">
+        <input type="text"
+               name="setting[openai_model_blacklist][]"
+               value=""
+               list="openai-model-suggestions"
+               class="input w-full"
+               data-openai-settings-target="blacklist"
+               data-action="change->openai-settings#blacklistChanged" />
+        <button type="button"
+                class="btn btn-ghost btn-sm"
+                data-action="click->openai-settings#removeEntry"
+                aria-label="Remove">✕</button>
+      </div>
+    </div>
+    <%= render DS::Button.new(
+      variant: :ghost,
+      size: :sm,
+          text: "Add",
+          icon: "plus",
+          data: { action: "click->openai-settings#addBlacklistEntry" }
+        ) %>
+  </div>
+
   <% end %>
 </div>

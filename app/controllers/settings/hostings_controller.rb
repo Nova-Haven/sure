@@ -61,6 +61,16 @@ class Settings::HostingsController < ApplicationController
       Rails.logger.info "OpenAI model after update: #{Setting.openai_model}"
     end
 
+    if hosting_params.key?(:openai_model_blacklist)
+      list = Array(hosting_params[:openai_model_blacklist]).map(&:to_s).map(&:strip).reject(&:blank?)
+      Setting.openai_model_blacklist = list
+    end
+
+    if hosting_params.key?(:openai_model_whitelist)
+      list = Array(hosting_params[:openai_model_whitelist]).map(&:to_s).map(&:strip).reject(&:blank?)
+      Setting.openai_model_whitelist = list
+    end
+
     redirect_to settings_hosting_path, notice: t(".success")
   rescue Setting::ValidationError => error
     flash.now[:alert] = error.message
@@ -103,7 +113,18 @@ class Settings::HostingsController < ApplicationController
 
   private
     def hosting_params
-      params.require(:setting).permit(:require_invite_for_signup, :require_email_confirmation, :brand_fetch_client_id, :twelve_data_api_key, :openai_access_token, :openai_uri_base, :openai_model, :openai_model_blacklist, :ai_assistant_name)
+      params.require(:setting).permit(
+        :require_invite_for_signup,
+        :require_email_confirmation,
+        :brand_fetch_client_id,
+        :twelve_data_api_key,
+        :openai_access_token,
+        :openai_uri_base,
+        :openai_model,
+        { openai_model_blacklist: [] },
+        { openai_model_whitelist: [] },
+        :ai_assistant_name
+      )
     end
 
     def ensure_admin

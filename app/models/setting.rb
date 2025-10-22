@@ -12,6 +12,7 @@ class Setting < RailsSettings::Base
     "text-embedding", "text-search", "text-similarity", "text-davinci-edit", 
     "code-davinci-edit", "whisper", "tts", "dall-e"
   ]
+  field :openai_model_whitelist, type: :array, default: []
   field :ai_assistant_name, type: :string, default: ENV.fetch("AI_ASSISTANT_NAME", "Surely")
   field :brand_fetch_client_id, type: :string, default: ENV["BRAND_FETCH_CLIENT_ID"]
 

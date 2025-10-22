@@ -5,6 +5,10 @@ export default class extends Controller {
     "endpoint",
     "modelSelect",
     "blacklist",
+    "whitelist",
+    "blacklistContainer",
+    "whitelistContainer",
+    "suggestionsList",
     "refreshButton",
     "providerInfo",
   ];
@@ -149,10 +153,18 @@ export default class extends Controller {
 
   updateModelOptions(models, preservedValue = null) {
     const select = this.modelSelectTarget;
+    // Keep a copy for re-filtering and suggestions
+    this.lastModels = Array.isArray(models) ? [...models] : [];
 
     // Use preserved value if provided, otherwise current value
     const currentValue =
       preservedValue !== null ? preservedValue : select.value;
+
+    // Apply whitelist/blacklist filtering
+    const filteredModels = this.filterModels(models);
+
+    // Update datalist suggestions (unfiltered for better discovery)
+    this.updateSuggestions(this.lastModels);
 
     // Completely clear all existing options
     select.innerHTML = "";
@@ -165,7 +177,7 @@ export default class extends Controller {
 
     // Add new model options
     let selectedOptionFound = false;
-    models.forEach((model) => {
+    filteredModels.forEach((model) => {
       const option = document.createElement("option");
       option.value = model;
       option.textContent = model;
@@ -185,6 +197,63 @@ export default class extends Controller {
       customOption.selected = true;
       select.appendChild(customOption);
     }
+  }
+
+  // Returns a new array filtered by blacklist/whitelist rules
+  filterModels(models) {
+    // Gather blacklist as substrings (case-insensitive)
+    const blacklist = this.hasBlacklistTarget
+      ? this._gatherList(this.blacklistTargets)
+      : [];
+    // Gather whitelist as exact model IDs (case-insensitive match)
+    const whitelist = this.hasWhitelistTarget
+      ? this._gatherList(this.whitelistTargets)
+      : [];
+
+    // Precompute lowercase sets for quick checks
+    const whitelistSet = new Set(whitelist);
+
+    return models.filter((model) => {
+      const modelLc = model.toLowerCase();
+      const isWhitelisted = whitelistSet.has(modelLc);
+
+      // If exactly whitelisted, always include
+      if (isWhitelisted) return true;
+
+      // Otherwise, check blacklist substrings
+      const isBlacklisted = blacklist.some(
+        (blk) => blk && modelLc.includes(blk)
+      );
+      return !isBlacklisted;
+    });
+  }
+
+  // Split by comma/newline, trim, lower-case, and remove empties
+  _parseList(raw) {
+    if (!raw) return [];
+    return raw
+      .split(/[\n,]/)
+      .map((s) => s.trim().toLowerCase())
+      .filter((s) => s.length > 0);
+  }
+
+  // Flatten values from multiple inputs into a normalized array
+  _gatherList(targets) {
+    const values = [];
+    targets.forEach((el) => {
+      const v = (el.value || "").trim();
+      if (v.length > 0) values.push(v.toLowerCase());
+    });
+    return values;
+  }
+
+  // Populate the datalist used for suggestions
+  updateSuggestions(models) {
+    if (!this.hasSuggestionsListTarget) return;
+    const unique = Array.from(new Set(models));
+    this.suggestionsListTarget.innerHTML = unique
+      .map((m) => `<option value="${m}"></option>`)
+      .join("");
   }
 
   updateProviderInfo() {
@@ -228,17 +297,107 @@ export default class extends Controller {
     this.providerInfoTarget.style.display = "";
   }
 
-  blacklistChanged() {
-    // Trigger form submission to save changes
-    const form = this.element.closest("form");
-    if (form) {
-      form.requestSubmit();
+  blacklistChanged(event) {
+    const value = (event?.target?.value || "").trim();
+    // Only submit if non-empty; keep blank rows unsaved so users can type
+    if (value.length > 0) {
+      const form = this.element.closest("form");
+      if (form) form.requestSubmit();
     }
+    if (this.lastModels) this.updateModelOptions(this.lastModels);
+  }
+
+  whitelistChanged(event) {
+    const value = (event?.target?.value || "").trim();
+    // Only submit if non-empty; keep blank rows unsaved so users can type
+    if (value.length > 0) {
+      const form = this.element.closest("form");
+      if (form) form.requestSubmit();
+    }
+    if (this.lastModels) this.updateModelOptions(this.lastModels);
   }
 
   endpointChanged() {
     this.updateProviderInfo();
     // Refresh models when endpoint changes
     this.refreshModels();
+  }
+
+  // UI helpers for dynamic entry management
+  addBlacklistEntry(event) {
+    this._addEntryRow("blacklist");
+  }
+
+  addWhitelistEntry(event) {
+    this._addEntryRow("whitelist");
+  }
+
+  removeEntry(event) {
+    const row = event.currentTarget.closest("[data-entry-row]");
+    if (row) {
+      const input = row.querySelector("input");
+      const hadValue = input?.value && input.value.trim().length > 0;
+      const isBlacklist = input?.name?.includes("openai_model_blacklist");
+      const container = isBlacklist
+        ? this.blacklistContainerTarget
+        : this.whitelistContainerTarget;
+      const kind = isBlacklist ? "blacklist" : "whitelist";
+
+      // Remove the row from the DOM
+      row.remove();
+
+      // Ensure there's always at least one input present so the param key is submitted
+      const nameAttr = isBlacklist
+        ? "setting[openai_model_blacklist][]"
+        : "setting[openai_model_whitelist][]";
+      const remainingInputs = container.querySelectorAll(
+        `input[name="${nameAttr}"]`
+      );
+      if (remainingInputs.length === 0) {
+        this._addEntryRow(kind);
+      }
+
+      // If the removed row had a value, persist removal immediately
+      if (hadValue) {
+        const form = this.element.closest("form");
+        if (form) form.requestSubmit();
+      }
+      // Re-filter options
+      if (this.lastModels) this.updateModelOptions(this.lastModels);
+    }
+  }
+
+  _addEntryRow(kind) {
+    const container =
+      kind === "blacklist"
+        ? this.blacklistContainerTarget
+        : this.whitelistContainerTarget;
+    const nameAttr =
+      kind === "blacklist"
+        ? "setting[openai_model_blacklist][]"
+        : "setting[openai_model_whitelist][]";
+    const targetAttr = kind === "blacklist" ? "blacklist" : "whitelist";
+
+    const wrapper = document.createElement("div");
+    wrapper.setAttribute("data-entry-row", "");
+    wrapper.className = "flex items-center gap-2 mb-2";
+    wrapper.innerHTML = `
+      <input type="text"
+             name="${nameAttr}"
+             list="openai-model-suggestions"
+             class="input w-full"
+             data-openai-settings-target="${targetAttr}"
+             data-action="change->openai-settings#${targetAttr}Changed" />
+      <button type="button" class="btn btn-ghost btn-sm"
+              data-action="click->openai-settings#removeEntry"
+              aria-label="Remove">
+        ✕
+      </button>
+    `;
+    container.appendChild(wrapper);
+
+    // Focus the new input
+    const input = wrapper.querySelector("input");
+    if (input) input.focus();
   }
 }
