@@ -302,7 +302,10 @@ export default class extends Controller {
     // Only submit if non-empty; keep blank rows unsaved so users can type
     if (value.length > 0) {
       const form = this.element.closest("form");
-      if (form) form.requestSubmit();
+      if (form) {
+        this._markListChanged("blacklist", form);
+        form.requestSubmit();
+      }
     }
     if (this.lastModels) this.updateModelOptions(this.lastModels);
   }
@@ -312,7 +315,10 @@ export default class extends Controller {
     // Only submit if non-empty; keep blank rows unsaved so users can type
     if (value.length > 0) {
       const form = this.element.closest("form");
-      if (form) form.requestSubmit();
+      if (form) {
+        this._markListChanged("whitelist", form);
+        form.requestSubmit();
+      }
     }
     if (this.lastModels) this.updateModelOptions(this.lastModels);
   }
@@ -360,11 +366,27 @@ export default class extends Controller {
       // If the removed row had a value, persist removal immediately
       if (hadValue) {
         const form = this.element.closest("form");
-        if (form) form.requestSubmit();
+        if (form) {
+          this._markListChanged(kind, form);
+          form.requestSubmit();
+        }
       }
       // Re-filter options
       if (this.lastModels) this.updateModelOptions(this.lastModels);
     }
+  }
+
+  // Ensure server knows which list was changed so it updates only that list
+  _markListChanged(kind, form) {
+    const NAME = "setting[_list_changed]";
+    let hidden = form.querySelector(`input[name="${NAME}"]`);
+    if (!hidden) {
+      hidden = document.createElement("input");
+      hidden.type = "hidden";
+      hidden.name = NAME;
+      form.appendChild(hidden);
+    }
+    hidden.value = kind === "blacklist" ? "blacklist" : "whitelist";
   }
 
   _addEntryRow(kind) {
@@ -380,18 +402,21 @@ export default class extends Controller {
 
     const wrapper = document.createElement("div");
     wrapper.setAttribute("data-entry-row", "");
-    wrapper.className = "flex items-center gap-2 mb-2";
+    wrapper.className = "flex items-start gap-2 mb-2";
     wrapper.innerHTML = `
-      <input type="text"
-             name="${nameAttr}"
-             list="openai-model-suggestions"
-             class="input w-full"
-             data-openai-settings-target="${targetAttr}"
-             data-action="change->openai-settings#${targetAttr}Changed" />
-      <button type="button" class="btn btn-ghost btn-sm"
+      <div class="form-field flex-1">
+        <input type="text"
+               name="${nameAttr}"
+               list="openai-model-suggestions"
+               class="form-field__input"
+               data-openai-settings-target="${targetAttr}"
+               data-action="change->openai-settings#${targetAttr}Changed" />
+      </div>
+      <button type="button"
+              class="inline-flex items-center justify-center w-8 h-8 rounded-md text-primary bg-transparent hover:bg-gray-100 theme-dark:hover:bg-gray-700"
               data-action="click->openai-settings#removeEntry"
               aria-label="Remove">
-        ✕
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
     `;
     container.appendChild(wrapper);

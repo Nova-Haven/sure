@@ -15,6 +15,7 @@ class Settings::HostingsController < ApplicationController
   end
 
   def update
+    list_changed = hosting_params[:_list_changed].to_s
     if hosting_params.key?(:require_invite_for_signup)
       Setting.require_invite_for_signup = hosting_params[:require_invite_for_signup]
     end
@@ -61,17 +62,19 @@ class Settings::HostingsController < ApplicationController
       Rails.logger.info "OpenAI model after update: #{Setting.openai_model}"
     end
 
-    if hosting_params.key?(:openai_model_blacklist)
+    if hosting_params.key?(:openai_model_blacklist) && list_changed == "blacklist"
       list = Array(hosting_params[:openai_model_blacklist]).map(&:to_s).map(&:strip).reject(&:blank?)
       Setting.openai_model_blacklist = list
     end
 
-    if hosting_params.key?(:openai_model_whitelist)
+    if hosting_params.key?(:openai_model_whitelist) && list_changed == "whitelist"
       list = Array(hosting_params[:openai_model_whitelist]).map(&:to_s).map(&:strip).reject(&:blank?)
       Setting.openai_model_whitelist = list
     end
 
-    redirect_to settings_hosting_path, notice: t(".success")
+  # Remember which list changed so the next render can show a convenient blank row only there
+  flash[:list_changed] = list_changed if list_changed.present?
+  redirect_to settings_hosting_path, notice: t(".success")
   rescue Setting::ValidationError => error
     flash.now[:alert] = error.message
     render :show, status: :unprocessable_entity
@@ -121,6 +124,7 @@ class Settings::HostingsController < ApplicationController
         :openai_access_token,
         :openai_uri_base,
         :openai_model,
+        :_list_changed,
         { openai_model_blacklist: [] },
         { openai_model_whitelist: [] },
         :ai_assistant_name

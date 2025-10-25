@@ -107,36 +107,55 @@
   <div class="mt-4">
     <label class="block text-sm font-medium mb-1">Model whitelist</label>
     <p class="text-xs text-secondary mb-2">Exact matches shown even if blacklisted. Add multiple entries.</p>
+  <% changed_list = flash[:list_changed] %>
+  <% whitelist_values = Array(Setting.openai_model_whitelist) %>
+  <% render_whitelist_placeholder = (changed_list == "whitelist") %>
     <div data-openai-settings-target="whitelistContainer">
       <% Array(Setting.openai_model_whitelist).each do |entry| %>
-        <div data-entry-row class="flex items-center gap-2 mb-2">
-          <input type="text"
-                 name="setting[openai_model_whitelist][]"
-                 value="<%= entry %>"
-                 list="openai-model-suggestions"
-                 class="input w-full"
-                 data-openai-settings-target="whitelist"
-                 data-action="change->openai-settings#whitelistChanged" />
-          <button type="button"
-                  class="btn btn-ghost btn-sm"
-                  data-action="click->openai-settings#removeEntry"
-                  aria-label="Remove">✕</button>
+        <div data-entry-row class="flex items-start gap-2 mb-2">
+          <div class="form-field flex-1">
+            <input type="text"
+                   name="setting[openai_model_whitelist][]"
+                   value="<%= entry %>"
+                   list="openai-model-suggestions"
+                   class="form-field__input"
+                   data-openai-settings-target="whitelist"
+                   data-action="change->openai-settings#whitelistChanged" />
+          </div>
+          <div class="pt-1">
+            <%= render DS::Button.new(
+                  variant: :ghost,
+                  size: :sm,
+                  icon: "x",
+                  data: { action: "click->openai-settings#removeEntry" },
+                  aria: { label: "Remove" }
+                ) %>
+          </div>
         </div>
       <% end %>
-      <!-- Always keep one empty row so a new entry isn't lost on autosave -->
-      <div data-entry-row class="flex items-center gap-2 mb-2">
-        <input type="text"
-               name="setting[openai_model_whitelist][]"
-               value=""
-               list="openai-model-suggestions"
-               class="input w-full"
-               data-openai-settings-target="whitelist"
-               data-action="change->openai-settings#whitelistChanged" />
-        <button type="button"
-                class="btn btn-ghost btn-sm"
-                data-action="click->openai-settings#removeEntry"
-                aria-label="Remove">✕</button>
-      </div>
+      <% if render_whitelist_placeholder %>
+        <!-- Keep one empty row for continued entry when this list was changed or has items -->
+        <div data-entry-row class="flex items-start gap-2 mb-2">
+          <div class="form-field flex-1">
+            <input type="text"
+                   name="setting[openai_model_whitelist][]"
+                   value=""
+                   list="openai-model-suggestions"
+                   class="form-field__input"
+                   data-openai-settings-target="whitelist"
+                   data-action="change->openai-settings#whitelistChanged" />
+          </div>
+          <div class="pt-1">
+            <%= render DS::Button.new(
+                  variant: :ghost,
+                  size: :sm,
+                  icon: "x",
+                  data: { action: "click->openai-settings#removeEntry" },
+                  aria: { label: "Remove" }
+                ) %>
+          </div>
+        </div>
+      <% end %>
     </div>
     <%= render DS::Button.new(
       variant: :ghost,
@@ -151,36 +170,54 @@
   <div class="mt-4">
     <label class="block text-sm font-medium mb-1">Model blacklist</label>
     <p class="text-xs text-secondary mb-2">Substring match; e.g., adding "text-embedding" hides models like "text-embedding-01".</p>
+  <% blacklist_values = Array(Setting.openai_model_blacklist) %>
+  <% render_blacklist_placeholder = (changed_list == "blacklist") %>
     <div data-openai-settings-target="blacklistContainer">
       <% Array(Setting.openai_model_blacklist).each do |entry| %>
-        <div data-entry-row class="flex items-center gap-2 mb-2">
-          <input type="text"
-                 name="setting[openai_model_blacklist][]"
-                 value="<%= entry %>"
-                 list="openai-model-suggestions"
-                 class="input w-full"
-                 data-openai-settings-target="blacklist"
-                 data-action="change->openai-settings#blacklistChanged" />
-          <button type="button"
-                  class="btn btn-ghost btn-sm"
-                  data-action="click->openai-settings#removeEntry"
-                  aria-label="Remove">✕</button>
+        <div data-entry-row class="flex items-start gap-2 mb-2">
+          <div class="form-field flex-1">
+            <input type="text"
+                   name="setting[openai_model_blacklist][]"
+                   value="<%= entry %>"
+                   list="openai-model-suggestions"
+                   class="form-field__input"
+                   data-openai-settings-target="blacklist"
+                   data-action="change->openai-settings#blacklistChanged" />
+          </div>
+          <div class="pt-1">
+            <%= render DS::Button.new(
+                  variant: :ghost,
+                  size: :sm,
+                  icon: "x",
+                  data: { action: "click->openai-settings#removeEntry" },
+                  aria: { label: "Remove" }
+                ) %>
+          </div>
         </div>
       <% end %>
-      <!-- Always keep one empty row so a new entry isn't lost on autosave -->
-      <div data-entry-row class="flex items-center gap-2 mb-2">
-        <input type="text"
-               name="setting[openai_model_blacklist][]"
-               value=""
-               list="openai-model-suggestions"
-               class="input w-full"
-               data-openai-settings-target="blacklist"
-               data-action="change->openai-settings#blacklistChanged" />
-        <button type="button"
-                class="btn btn-ghost btn-sm"
-                data-action="click->openai-settings#removeEntry"
-                aria-label="Remove">✕</button>
-      </div>
+      <% if render_blacklist_placeholder %>
+        <!-- Keep one empty row for continued entry when this list was changed or has items -->
+        <div data-entry-row class="flex items-start gap-2 mb-2">
+          <div class="form-field flex-1">
+            <input type="text"
+                   name="setting[openai_model_blacklist][]"
+                   value=""
+                   list="openai-model-suggestions"
+                   class="form-field__input"
+                   data-openai-settings-target="blacklist"
+                   data-action="change->openai-settings#blacklistChanged" />
+          </div>
+          <div class="pt-1">
+            <%= render DS::Button.new(
+                  variant: :ghost,
+                  size: :sm,
+                  icon: "x",
+                  data: { action: "click->openai-settings#removeEntry" },
+                  aria: { label: "Remove" }
+                ) %>
+          </div>
+        </div>
+      <% end %>
     </div>
     <%= render DS::Button.new(
       variant: :ghost,
